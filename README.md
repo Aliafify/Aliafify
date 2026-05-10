@@ -1,10 +1,35 @@
-Hello everyone! I'm Ali Afify, and I'd like to share a bit about my journey with you.
+# GSC CSV Analyzer (Production Architecture)
 
-I graduated in 2014 from the Faculty of Science, where I specialized in Physics and Mathematics. Following that, I spent several years serving as an officer in the military, which was a unique experience that shaped my discipline and leadership skills.
+## Stack
+React + TypeScript + Vite + TailwindCSS + shadcn/ui compatible primitives + TanStack Table + PapaParse + Recharts + Zod + Zustand.
 
-After completing my service in 2017, I transitioned back into academia as a Physics teaching assistant. My passion for quantum science drove me to pursue a Master's degree in Quantum Computational Physics. Along the way, I've also had the privilege of publishing my research in worldwide scientific journals, contributing to the broader scientific community.
+## Setup
+```bash
+npm install
+npm run dev
+```
 
-But my journey didn't stop there. I’ve always been fascinated by technology, so I dove into web development, mastering skills in HTML5, CSS3, JavaScript, WordPress, Node.js, React.js, Redux, and MongoDB. This combination of science and tech has allowed me to approach problems in unique ways.
+## Build
+```bash
+npm run build
+npm run preview
+```
 
-For three years, I worked as a freelancer, tackling diverse projects and honing my skills. That experience led me to establish OSBASH Company, where we specialize in programming and digital marketing. Through OSBASH, I’m passionate about helping businesses navigate the digital landscape and achieve their goals.
+## Folder Structure
+- `src/components`: shared UI components (ready for shadcn generation)
+- `src/features/upload`: drag & drop/file picker CSV upload
+- `src/features/table`: high-performance TanStack table + row virtualization
+- `src/features/filters`: reusable filtering engine + SEO presets
+- `src/features/charts`: KPI charts
+- `src/features/export`: CSV/JSON export services
+- `src/services`: parsing/data services
+- `src/utils`: Arabic normalization utilities
+- `src/types`: shared domain types
+- `src/hooks`, `src/lib`: extension points for future modules
 
+## Production Notes
+- UTF-8 Arabic-safe parsing via PapaParse
+- Validation pipeline with malformed-row reporting
+- Arabic normalization for keyword filtering
+- Ready for large datasets (50k+ rows) through memoization and virtualization
+- Scalable architecture for AI clustering, GSC API ingestion, trend analysis, semantic grouping
