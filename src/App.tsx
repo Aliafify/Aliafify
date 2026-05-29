@@ -1,36 +1,81 @@
+import { Bot, BrainCircuit, DatabaseZap, Workflow } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { CsvUpload } from '@/features/upload/CsvUpload';
-import { parseCsvFile } from '@/services/csvParser';
-import type { FilterCondition, FilterGroup, ParsedCsvDataset } from '@/types/csv';
-import { applyFilterGroup } from '@/filters/filterEngine';
-import { DataTable } from '@/features/table/DataTable';
-import { ChartsPanel } from '@/features/charts/ChartsPanel';
-import { exportCsv, exportJson } from '@/exporters/exporters';
+import { BranchEditor } from '@/components/BranchEditor';
+import { ControlsBar } from '@/components/ControlsBar';
+import { KeywordInputPanel } from '@/components/KeywordInputPanel';
+import { ResultsPanel } from '@/components/ResultsPanel';
+import { Sidebar } from '@/components/Sidebar';
+import { StatsCards } from '@/components/StatsCards';
+import { DEFAULT_BRANCHES } from '@/constants/branches';
+import { useKeywordClassifier } from '@/hooks/useKeywordClassifier';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { exportBranchesJson, exportClassificationCsv } from '@/services/exportService';
+import type { BranchDefinition, ClassificationOptions } from '@/types/keyword';
+import { parseKeywordInput, sampleKeywordJson } from '@/utils/inputParser';
 
-const emptyGroup: FilterGroup = { id: 'root', combinator: 'and', conditions: [] };
+const INITIAL_OPTIONS: ClassificationOptions = {
+  deduplicate: true,
+  allowMultipleMatches: true,
+};
 
 export const App = () => {
-  const [dataset, setDataset] = useState<ParsedCsvDataset | null>(null);
-  const [group, setGroup] = useState<FilterGroup>(emptyGroup);
+  const [rawInput, setRawInput] = useLocalStorage('arabic-keyword-classifier-input', sampleKeywordJson);
+  const [branches, setBranches] = useLocalStorage<BranchDefinition[]>('arabic-keyword-classifier-branches', DEFAULT_BRANCHES);
+  const [options, setOptions] = useState<ClassificationOptions>(INITIAL_OPTIONS);
+  const [search, setSearch] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('all');
 
-  const filtered = useMemo(() => dataset ? applyFilterGroup(dataset.rows, group) : [], [dataset, group]);
+  const keywordBatches = useMemo(() => [parseKeywordInput(rawInput)], [rawInput]);
+  const stableOptions = useMemo(() => options, [options]);
+  const { result, analytics } = useKeywordClassifier(keywordBatches, stableOptions, branches);
 
-  const addCondition = () => {
-    if (!dataset?.columns.length) return;
-    const col = dataset.columns[0];
-    const condition: FilterCondition = { id: crypto.randomUUID(), column: col.key, operator: col.type === 'number' || col.type === 'percentage' ? 'gt' : 'contains', value: '' };
-    setGroup((g) => ({ ...g, conditions: [...g.conditions, condition] }));
-  };
+  return (
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(34,211,238,0.16),_transparent_32rem),linear-gradient(135deg,_#020617_0%,_#0f172a_50%,_#111827_100%)] px-4 py-6 text-slate-100" dir="rtl">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <header className="overflow-hidden rounded-3xl border border-cyan-400/20 bg-slate-900/70 p-6 shadow-2xl shadow-cyan-950/20 backdrop-blur">
+          <div className="grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-400/10 px-4 py-2 text-sm font-semibold text-cyan-200">
+                <Bot className="size-4" /> Arabic SEO Keyword Branch Classifier
+              </div>
+              <h1 className="max-w-4xl text-3xl font-black leading-tight text-white md:text-5xl">
+                أداة احترافية لتجميع وتصنيف كلمات SEO العربية وإعادة توزيعها على الفروع تلقائيًا
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300">
+                دمج batches متعددة، تطبيع عربي متقدم، تصنيف ديناميكي قابل للتوسعة، CSV UTF-8، نسخ بضغطة واحدة، وفصل معماري جاهز لإضافة NLP و OpenAI API مستقبلًا.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3 lg:w-80 lg:grid-cols-1">
+              <div className="hero-pill"><DatabaseZap className="size-5 text-cyan-300" /> 50K+ كلمة</div>
+              <div className="hero-pill"><Workflow className="size-5 text-emerald-300" /> فروع ديناميكية</div>
+              <div className="hero-pill"><BrainCircuit className="size-5 text-violet-300" /> جاهز للذكاء الاصطناعي</div>
+            </div>
+          </div>
+        </header>
 
-  return <main className="mx-auto max-w-7xl space-y-4 p-4" dir="auto">
-    <header className="card"><h1 className="text-2xl font-bold">Universal Dynamic CSV Analytics Platform</h1></header>
-    <CsvUpload onFile={async (file) => { const parsed = await parseCsvFile(file); setDataset(parsed); setGroup(emptyGroup); }} />
-    {dataset && <section className="card space-y-2">
-      <div className="flex flex-wrap gap-2"><button className="rounded bg-slate-700 px-3 py-2" onClick={addCondition}>Add Filter</button><button className="rounded bg-slate-700 px-3 py-2" onClick={() => setGroup((g) => ({ ...g, combinator: g.combinator === 'and' ? 'or' : 'and' }))}>Combinator: {group.combinator.toUpperCase()}</button><button className="rounded bg-emerald-700 px-3 py-2" onClick={() => exportCsv(filtered)}>Export CSV</button><button className="rounded bg-indigo-700 px-3 py-2" onClick={() => exportJson(filtered)}>Export JSON</button></div>
-      {group.conditions.map((c) => <div key={c.id} className="grid grid-cols-1 gap-2 md:grid-cols-5"><select className="rounded bg-slate-900 p-2" value={c.column} onChange={(e) => setGroup((g) => ({ ...g, conditions: g.conditions.map((x) => x.id === c.id ? { ...x, column: e.target.value } : x) }))}>{dataset.columns.map((col) => <option key={col.key} value={col.key}>{col.label}</option>)}</select><select className="rounded bg-slate-900 p-2" value={c.operator} onChange={(e) => setGroup((g) => ({ ...g, conditions: g.conditions.map((x) => x.id === c.id ? { ...x, operator: e.target.value as FilterCondition['operator'] } : x) }))}>{['gt','lt','eq','between','contains','notContains','startsWith','endsWith','exact','regex','before','after'].map((op) => <option key={op} value={op}>{op}</option>)}</select><input className="rounded bg-slate-900 p-2" placeholder="value" value={c.value ?? ''} onChange={(e) => setGroup((g) => ({ ...g, conditions: g.conditions.map((x) => x.id === c.id ? { ...x, value: e.target.value } : x) }))} /><input className="rounded bg-slate-900 p-2" placeholder="value2" value={c.value2 ?? ''} onChange={(e) => setGroup((g) => ({ ...g, conditions: g.conditions.map((x) => x.id === c.id ? { ...x, value2: e.target.value } : x) }))} /><button className="rounded bg-rose-700 px-3 py-2" onClick={() => setGroup((g) => ({ ...g, conditions: g.conditions.filter((x) => x.id !== c.id) }))}>Remove</button></div>)}
-    </section>}
-    {dataset && <section className="card text-sm text-slate-300">Rows: {dataset.totalRows} | Filtered: {filtered.length}</section>}
-    {dataset && <ChartsPanel rows={filtered} schema={dataset.columns} />}
-    {dataset && <DataTable data={filtered} schema={dataset.columns} />}
-  </main>;
+        <StatsCards stats={result.stats} />
+
+        <KeywordInputPanel value={rawInput} onChange={setRawInput} onFileText={setRawInput} />
+
+        <BranchEditor branches={branches} onBranchesChange={setBranches} />
+
+        <ControlsBar
+          options={options}
+          onOptionsChange={setOptions}
+          search={search}
+          onSearchChange={setSearch}
+          selectedBranch={selectedBranch}
+          onSelectedBranchChange={setSelectedBranch}
+          branches={branches}
+          onExportCsv={() => exportClassificationCsv(result.buckets)}
+          onExportJson={() => exportBranchesJson(branches)}
+        />
+
+        <section className="grid gap-6 lg:grid-cols-[18rem_1fr]">
+          <Sidebar analytics={analytics} selectedBranch={selectedBranch} onSelectBranch={setSelectedBranch} unknownCount={result.stats.unknown} />
+          <ResultsPanel buckets={result.buckets} branches={branches} search={search} selectedBranch={selectedBranch} />
+        </section>
+      </div>
+    </main>
+  );
 };
