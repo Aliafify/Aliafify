@@ -1,21 +1,25 @@
 # GSC CSV Analyzer (Production Architecture)
 
 ## Stack
+
 React + TypeScript + Vite + TailwindCSS + shadcn/ui compatible primitives + TanStack Table + PapaParse + Recharts + Zod + Zustand.
 
 ## Setup
+
 ```bash
 npm install
 npm run dev
 ```
 
 ## Build
+
 ```bash
 npm run build
 npm run preview
 ```
 
 ## Folder Structure
+
 - `src/components`: shared UI components (ready for shadcn generation)
 - `src/features/upload`: drag & drop/file picker CSV upload
 - `src/features/table`: high-performance TanStack table + row virtualization
@@ -27,7 +31,12 @@ npm run preview
 - `src/types`: shared domain types
 - `src/hooks`, `src/lib`: extension points for future modules
 
+## Enterprise SEO Knowledge Graph
+
+The enterprise SEO knowledge graph architecture, PostgreSQL DDL, seed data, page-generation workflow, and NestJS target module layout are documented in [`docs/enterprise-seo-knowledge-graph.md`](docs/enterprise-seo-knowledge-graph.md).
+
 ## Production Notes
+
 - UTF-8 Arabic-safe parsing via PapaParse
 - Validation pipeline with malformed-row reporting
 - Arabic normalization for keyword filtering
